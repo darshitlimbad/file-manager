@@ -2,6 +2,15 @@
 File manager (CLI) Program in python
 
 operations :
+-ls :
+    ls stands for list directory
+    this operation fetches all files and directories from pwd 
+
+    it has 3 modes :
+    -s(default): this mode fatches visible files and directories
+    -a: this mode fatches all visible and hidden directories and files
+    -l: fetches all files and directories with states
+
 
 '''
 
@@ -27,6 +36,8 @@ print("--help or -h for help and details of the cammands and what it does -_-.")
 print("--- \n\n\n\n") 
 
 import os
+import pwd as fileMetaDataFetcher
+import grp
 import time
 
 root= os.getcwd()
@@ -77,12 +88,23 @@ def decode_octal_permission(octal , path):
 def _print_colored(text,color):
     print(color_codes[color] + text + reset_code,end="\t\t")
 
+def _decodeUnixDate(unixDate):
+    date= time.localtime(unixDate)
+
+    filterdDate= str(date.tm_mday) + '/' + str(date.tm_mon) + '/' + str(date.tm_year)
+
+    return filterdDate
+
 def help():
-    print('help')
+    print("Welcome to the help section here is all the details you need:")
     # all the help topic here
+    
+    #ls help
+    print("-ls : \n \tls stands for list directory\n \tthis operation fetches all files and directories from pwd \n\n \tit has 3 modes :\n \t-s(default): this mode fatches visible files and directories\n \t-a: this mode fatches all visible and hidden directories and files\n \t-l: fetches all files and directories with states")
+
 
 def ls(command):
-    # try:
+    try:
         path=root+pwd
         dirs= os.listdir(path)
 
@@ -113,10 +135,20 @@ def ls(command):
                 fileStat= os.stat(path+dir)
                 Permission_in_octal= oct(fileStat.st_mode)[-3:]
                 
-                state={
+                mtimeArray=time.localtime(fileStat.st_mtime) 
+                
+                filteredFileStat={
                     'permissions': decode_octal_permission(Permission_in_octal , path+dir),
+                    'owner':fileMetaDataFetcher.getpwuid(fileStat.st_uid).pw_name,
+                    'group':grp.getgrgid(fileStat.st_gid).gr_name,
+                    'size': fileStat.st_size,
+                    'mtime': _decodeUnixDate(fileStat.st_mtime),
+                    'fileName': dir,
                 }
-                print(state)
+
+                for stat in filteredFileStat.values():
+                    print(stat ,end="\t")
+                print()
                 i+=1
         elif listType == 'a':
             for dir in dirs:
@@ -128,8 +160,8 @@ def ls(command):
         else:
             raise
 
-        print("\n Total = ",i)
-    # except:
+        print("\n Total = ",i,"\n\n")
+    except:
         print(" Command not Found!!! ")
 
 
@@ -145,6 +177,8 @@ def main():
             break
         elif command[0] == '--help' or command[0] == '-h':
             help()#not completed
+        elif command[0] == 'pwd':
+            print(pwd)
         elif command[0] == 'ls':
             ls(command)
         else:
